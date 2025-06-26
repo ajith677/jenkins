@@ -8,7 +8,6 @@ WORKDIR /demo
 COPY target/myapp.jar app.jar
 
 # Expose port 8081 (matches Jenkinsfile's docker run command)
-EXPOSE 8081
 
 # Run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "/app.jar"]
