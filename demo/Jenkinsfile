@@ -14,22 +14,22 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                dir('demo'){
-                sh './mvnw clean package -DskipTests=false'
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-            dir('demo'){
-                sh './mvnw test'
-
-                            }
-           }
-        }
+//         stage('Build') {
+//             steps {
+//                 dir('demo'){
+//                 sh './mvnw clean package -DskipTests=false'
+//                 }
+//             }
+//         }
+//
+//         stage('Test') {
+//             steps {
+//             dir('demo'){
+//                 sh './mvnw test'
+//
+//                             }
+//            }
+//         }
 
         stage('Build Docker Image') {
             steps {
