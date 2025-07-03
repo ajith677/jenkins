@@ -2,7 +2,7 @@ FROM openjdk:17-alpine
 
 WORKDIR /demo
 
-COPY target/myapp.jar app.jar
+COPY target/*.jar app.jar
 
 EXPOSE 8081
 
