@@ -29,16 +29,16 @@ pipeline {
                 }
             }
         }
-         stage('sonar') {
-                    steps {
-                        dir('demo') {
-                            sh 'mvn sonarqube \
-                                  -Dsonar.token=squ_4e04534d3d71ebc95d5b7ecfda872a05ad3bf7c7 \
-                                  -Dsonar.host.url=http://localhost:9000'
-
-                        }
-                    }
-                }
+//          stage('sonar') {
+//                     steps {
+//                         dir('demo') {
+//                             sh 'mvn sonarqube \
+//                                   -Dsonar.token=squ_4e04534d3d71ebc95d5b7ecfda872a05ad3bf7c7 \
+//                                   -Dsonar.host.url=http://localhost:9000'
+//
+//                         }
+//                     }
+//                 }
 
 
         stage('Build Docker Image') {
