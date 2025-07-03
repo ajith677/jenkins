@@ -4,6 +4,10 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'springboot-app'
         IMAGE_TAG = '23'
+         SPRING_DATASOURCE_URL = 'jdbc:mysql://localhost:3306/security'
+         SPRING_DATASOURCE_USERNAME = 'root'
+         SPRING_DATASOURCE_PASSWORD = '1234'
+          SPRING_JPA_DATABASE_PLATFORM = 'org.hibernate.dialect.MySQL8Dialect'
     }
 
     stages {
