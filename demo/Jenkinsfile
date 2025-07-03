@@ -67,7 +67,7 @@ pipeline {
                 script {
                     sh 'docker stop springboot-app || true'
                     sh 'docker rm springboot-app || true'
-                    sh "docker run -d --name springboot-app -p 8081:8081 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    sh "docker run  --name springboot-app -p 8081:8081 ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 }
             }
         }
