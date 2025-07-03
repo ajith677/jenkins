@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'springboot-app'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        // REGISTRY_CREDENTIALS = 'dockerhub-creds-id' // Uncomment if pushing to Docker Hub
+        IMAGE_TAG = '23'
     }
 
     stages {
@@ -14,7 +13,6 @@ pipeline {
             }
         }
 
-        // Optional: Uncomment if you need to build the Spring Boot application
 
         stage('Build') {
             steps {
@@ -67,10 +65,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // Stop and remove existing container if it exists
                     sh 'docker stop springboot-app || true'
                     sh 'docker rm springboot-app || true'
-                    // Run the new container
                     sh "docker run -d --name springboot-app -p 8081:8081 ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 }
             }
