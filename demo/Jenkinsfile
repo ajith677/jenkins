@@ -4,10 +4,10 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'springboot-app'
         IMAGE_TAG = '23'
-         SPRING_DATASOURCE_URL = 'jdbc:mysql://localhost:3306/security'
-         SPRING_DATASOURCE_USERNAME = 'root'
-         SPRING_DATASOURCE_PASSWORD = '1234'
-          SPRING_JPA_DATABASE_PLATFORM = 'org.hibernate.dialect.MySQL8Dialect'
+        SPRING_DATASOURCE_URL = 'jdbc:mysql://host.docker.internal:3306/security'
+        SPRING_DATASOURCE_USERNAME = 'root'
+        SPRING_DATASOURCE_PASSWORD = '1234'
+        SPRING_JPA_DATABASE_PLATFORM = 'org.hibernate.dialect.MySQL8Dialect'
     }
 
     stages {
@@ -16,7 +16,6 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/ajith677/jenkins.git'
             }
         }
-
 
         stage('Build') {
             steps {
@@ -33,17 +32,6 @@ pipeline {
                 }
             }
         }
-//          stage('sonar') {
-//                     steps {
-//                         dir('demo') {
-//                             sh 'mvn sonarqube \
-//                                   -Dsonar.token=squ_4e04534d3d71ebc95d5b7ecfda872a05ad3bf7c7 \
-//                                   -Dsonar.host.url=http://localhost:9000'
-//
-//                         }
-//                     }
-//                 }
-
 
         stage('Build Docker Image') {
             steps {
@@ -53,25 +41,17 @@ pipeline {
             }
         }
 
-//         // Optional: Uncomment if you want to push the image to a registry
-//         /*
-//         stage('Push Docker Image') {
-//             steps {
-//                 script {
-//                     docker.withRegistry('https://index.docker.io/v1/', REGISTRY_CREDENTIALS) {
-//                         sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-//                     }
-//                 }
-//             }
-//         }
-//         */
-
         stage('Deploy') {
             steps {
                 script {
                     sh 'docker stop springboot-app || true'
                     sh 'docker rm springboot-app || true'
-                    sh "docker run  --name springboot-app -p 8081:8081 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    sh """docker run -d --name springboot-app -p 8081:8081 \
+                        -e SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL} \
+                        -e SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME} \
+                        -e SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD} \
+                        -e SPRING_JPA_DATABASE_PLATFORM=${SPRING_JPA_DATABASE_PLATFORM} \
+                        ${DOCKER_IMAGE}:${IMAGE_TAG}"""
                 }
             }
         }
