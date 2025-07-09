@@ -1,0 +1,101 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Target environment')
+    }
+
+    environment {
+        DOCKER_IMAGE = 'yourcompany/springboot-app'
+        IMAGE_TAG = "${env.BUILD_NUMBER}-${params.ENVIRONMENT}"
+        DOCKER_REGISTRY = 'docker.io/yourcompany'
+        SPRING_JPA_DATABASE_PLATFORM = 'org.hibernate.dialect.MySQL8Dialect'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/username/jenkins.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('demo') {
+                    sh 'mvn clean package -DskipTests=false'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('demo') {
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('demo') {
+                    sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    withCredentials([
+                        usernamePassword(credentialsId: "${params.ENVIRONMENT}-mysql-credentials", usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS'),
+                        string(credentialsId: "${params.ENVIRONMENT}-mysql-url", variable: 'DB_URL')
+                    ]) {
+                        withKubeConfig([credentialsId: 'kubeconfig']) {
+                            sh """kubectl set image deployment/springboot-app springboot-app=${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG} --record"""
+                            sh 'kubectl rollout status deployment/springboot-app'
+                            sh """kubectl set env deployment/springboot-app \
+                                SPRING_DATASOURCE_URL='${DB_URL}' \
+                                SPRING_DATASOURCE_USERNAME='${DB_USER}' \
+                                SPRING_DATASOURCE_PASSWORD='${DB_PASS}' \
+                                SPRING_JPA_DATABASE_PLATFORM='${SPRING_JPA_DATABASE_PLATFORM}'"""
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    sh 'sleep 10'
+                    sh 'curl http://springboot-app-${params.ENVIRONMENT}:8081/actuator/health || exit 1'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            slackSend channel: channel '#deployments', message: "✅ ${params.ENVIRONMENT} deployment (#${env.BUILD_NUMBER}) succeeded!"
+        }
+            failure {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig-id: 'kubeconfig']) {
+                        sh 'kubectl rollout undo deployment/springboot-app'
+                    }
+                    slackSend channel: '#deployments', message: "❌ ${params.ENVIRONMENT} deployment (#${env.BUILD_NUMBER}) failed. Rolled back."
+                }
+            }
+    }
+}
